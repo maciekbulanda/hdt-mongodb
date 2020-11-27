@@ -5,4 +5,12 @@ public class InfoDto {
     public InfoDto() {
         this.version = "1";
     }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
 }
