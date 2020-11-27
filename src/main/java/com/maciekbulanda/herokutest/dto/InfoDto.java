@@ -6,7 +6,7 @@ public class InfoDto {
     private String creator;
     public InfoDto() {
         this.name = "Heroku With MongoDB Test App";
-        this.version = "1";
+        this.version = "0.0.1";
         this.creator = "Maciej Bulanda";
     }
 
