@@ -34,8 +34,10 @@ public class SecurityConfig {
         http
                 .httpBasic()
                 .and()
-                .authorizeExchange((exchangeSpec) -> exchangeSpec.pathMatchers(HttpMethod.GET, "/login").authenticated())
-                .addFilterAt(wf, SecurityWebFiltersOrder.HTTP_BASIC);
+                .authorizeExchange(exchangeSpec -> exchangeSpec.pathMatchers(HttpMethod.GET, "/login").authenticated())
+                .addFilterAt(wf, SecurityWebFiltersOrder.HTTP_BASIC)
+                .authorizeExchange(exchangeSpec -> exchangeSpec.pathMatchers("/api/**").authenticated())
+                .authorizeExchange(exchangeSpec -> exchangeSpec.pathMatchers("/").permitAll());
 
         http.cors().disable();
 
