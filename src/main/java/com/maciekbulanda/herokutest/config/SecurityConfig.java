@@ -1,10 +1,12 @@
 package com.maciekbulanda.herokutest.config;
 
-import com.nimbusds.jose.*;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpMethod;
@@ -13,17 +15,17 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.userdetails.MapReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Date;
+
+import static org.springframework.web.cors.CorsConfiguration.ALL;
 
 @EnableWebFluxSecurity
 public class SecurityConfig {
@@ -48,27 +50,39 @@ public class SecurityConfig {
                 .authorizeExchange(exchangeSpec -> exchangeSpec.pathMatchers("/api/**").authenticated())
                 .authorizeExchange(exchangeSpec -> exchangeSpec.pathMatchers("/").permitAll());
 
-        http.cors().disable();
+        http.cors(corsSpec -> {
+            UrlBasedCorsConfigurationSource configurationSource = new UrlBasedCorsConfigurationSource();
+            CorsConfiguration corsConfiguration = new CorsConfiguration();
+            corsConfiguration.addAllowedOrigin("http://localhost:3000");
+            corsConfiguration.addAllowedMethod(HttpMethod.OPTIONS);
+            corsConfiguration.addAllowedMethod(HttpMethod.GET);
+            corsConfiguration.addAllowedMethod(HttpMethod.POST);
+            corsConfiguration.addAllowedMethod(HttpMethod.PUT);
+            corsConfiguration.addAllowedMethod(HttpMethod.DELETE);
+            corsConfiguration.addAllowedHeader("*");
+            corsConfiguration.addExposedHeader("Authorization");
+            configurationSource.registerCorsConfiguration("/**", corsConfiguration);
+            corsSpec.configurationSource(configurationSource);
+        });
 
         return http.build();
     }
 
     private String generateToken(Authentication authentication) {
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                    .issuer("MB")
-                    .subject(authentication.getName())
-                    .expirationTime(new Date())
-                    .build();
+                .issuer("MB")
+                .subject(authentication.getName())
+                .expirationTime(new Date())
+                .build();
 
         SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.HS256), claimsSet);
         try {
             JWSSigner jwsSigner = new MACSigner(secret);
             signedJWT.sign(jwsSigner);
-        }
-        catch (JOSEException e) {
+        } catch (JOSEException e) {
             e.printStackTrace();
         }
-        return "Bearer " +signedJWT.serialize();
+        return "Bearer " + signedJWT.serialize();
     }
 
     @Bean
